@@ -35,13 +35,13 @@ export default defineConfig((env) => {
       host: '0.0.0.0',
       port: 8090,
       open: false,
-      proxy: {
-        '/api': {
-          target: 'http://127.0.0.1:7861',
-          changeOrigin: true, // 允许跨域
-          rewrite: path => path.replace('/api/', ''),
-        },
-      },
+      // proxy: {
+      //   '/api': {
+      //     target: 'http://127.0.0.1:7861',
+      //     changeOrigin: true, // 允许跨域
+      //     rewrite: path => path.replace('/api/', ''),
+      //   },
+      // },
     },
     build: {
       reportCompressedSize: false,
