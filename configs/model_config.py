@@ -16,7 +16,8 @@ embedding_model_dict = {
     "ernie-tiny": "nghuyong/ernie-3.0-nano-zh",
     "ernie-base": "nghuyong/ernie-3.0-base-zh",
     "text2vec-base": "shibing624/text2vec-base-chinese",
-    "text2vec": "GanymedeNil/text2vec-large-chinese",
+    #"text2vec": "GanymedeNil/text2vec-large-chinese",
+    "text2vec": "/home/zhh/git/aichat/data/GanymedeNil_text2vec-large-chinese",
     "m3e-small": "moka-ai/m3e-small",
     "m3e-base": "moka-ai/m3e-base",
 }
@@ -61,7 +62,7 @@ llm_model_dict = {
     "chatglm2-6b": {
         "name": "chatglm2-6b",
         "pretrained_model_name": "THUDM/chatglm2-6b",
-        "local_model_path": None,
+        "local_model_path": "/home/zhh/git/aichat/data/chatglm2",
         "provides": "ChatGLM"
     },
     "chatglm2-6b-int4": {
@@ -122,7 +123,7 @@ llm_model_dict = {
 }
 
 # LLM 名称
-LLM_MODEL = "chatglm-6b"
+LLM_MODEL = "chatglm2-6b"
 # 量化加载8bit 模型
 LOAD_IN_8BIT = False
 # Load the model with bfloat16 precision. Requires NVIDIA Ampere GPU.
@@ -145,6 +146,9 @@ LLM_DEVICE = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mp
 
 # 知识库默认存储路径
 KB_ROOT_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "knowledge_base")
+VS_ROOT_PATH=KB_ROOT_PATH
+UPLOAD_ROOT_PATH = VS_ROOT_PATH
+NO_REMOTE_MODEL=True
 
 # 基于上下文的prompt模版，请务必保留"{question}"和"{context}"
 PROMPT_TEMPLATE = """已知信息：
@@ -153,22 +157,22 @@ PROMPT_TEMPLATE = """已知信息：
 根据上述已知信息，简洁和专业的来回答用户的问题。如果无法从中得到答案，请说 “根据已知信息无法回答该问题” 或 “没有提供足够的相关信息”，不允许在答案中添加编造成分，答案请使用中文。 问题是：{question}"""
 
 # 缓存知识库数量,如果是ChatGLM2,ChatGLM2-int4,ChatGLM2-int8模型若检索效果不好可以调成’10’
-CACHED_VS_NUM = 1
+CACHED_VS_NUM = 10
 
 # 文本分句长度
-SENTENCE_SIZE = 100
+SENTENCE_SIZE = 200
 
 # 匹配后单段上下文长度
-CHUNK_SIZE = 250
+CHUNK_SIZE = 550
 
 # 传入LLM的历史记录长度
 LLM_HISTORY_LEN = 3
 
 # 知识库检索时返回的匹配内容条数
-VECTOR_SEARCH_TOP_K = 1
+VECTOR_SEARCH_TOP_K = 2
 
 # 知识检索内容相关度 Score, 数值范围约为0-1100，如果为0，则不生效，经测试设置为小于500时，匹配结果更精准
-VECTOR_SEARCH_SCORE_THRESHOLD = 150
+VECTOR_SEARCH_SCORE_THRESHOLD = 550
 
 NLTK_DATA_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "nltk_data")
 

@@ -306,7 +306,7 @@ block_css = """.importantButton {
     border: none !important;
 }"""
 
-webui_title = "# 智能客服系统"
+webui_title = "# 智能客服系统后台管理"
 """
 <center>
 <h1> 智能客服系统 </h1>
@@ -330,18 +330,18 @@ with gr.Blocks(css=block_css, theme=gr.themes.Default(**default_theme_args)) as 
         os.path.join(KB_ROOT_PATH, get_vs_list()[0], "vector_store") if len(get_vs_list()) > 1 else ""), gr.State(""), gr.State(
         model_status)
     gr.Markdown(webui_title)
-    with gr.Tab("聊天"):
+    with gr.Tab("知识库配置管理"):
         with gr.Row():
-            with gr.Column(scale=10):
+            with gr.Column(scale=5, visible= False):
                 chatbot = gr.Chatbot([[None, init_message], [None, model_status.value]],
                                      elem_id="chat-box",
                                      show_label=False).style(height=550)
                 query = gr.Textbox(show_label=False,
                                    placeholder="请输入提问内容，按回车进行提交").style(container=False)
-            with gr.Column(scale=5):
+            with gr.Column(scale=15):
                 mode = gr.Radio(["智能服务", "智能对话" ],#, "Bing搜索问答"
                                 label="请选择使用模式",
-                                value="智能服务", )
+                                value="智能服务", visible=False)
                 knowledge_set = gr.Accordion("知识库设定", visible=False)
                 vs_setting = gr.Accordion("配置知识库")
                 mode.change(fn=change_mode,
@@ -412,6 +412,8 @@ with gr.Blocks(css=block_css, theme=gr.themes.Default(**default_theme_args)) as 
                                              show_progress=True,
                                              inputs=[select_vs, files_to_delete, chatbot],
                                              outputs=[files_to_delete, chatbot])
+                
+            
     with gr.Tab("知识库验证", visible = False):
         with gr.Row():
             with gr.Column(scale=10):

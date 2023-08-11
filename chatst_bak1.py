@@ -17,6 +17,10 @@ from models.loader import LoaderCheckPoint
 
 nltk.data.path = [NLTK_DATA_PATH] + nltk.data.path
 
+@st.cache_resource
+def init_session():
+    if 'history' not in st.session_state:
+        st.session_state.history = []
 
 def get_vs_list():
     lst_default = ["新建知识库"]
@@ -52,13 +56,13 @@ def get_answer(query, vs_path, history, mode, score_threshold=VECTOR_SEARCH_SCOR
     elif mode == "知识库问答" and vs_path is not None and os.path.exists(vs_path):
         for resp, history in local_doc_qa.get_knowledge_based_answer(
                 query=query, vs_path=vs_path, chat_history=history, streaming=streaming):
-            source = "\n"
-            # source += "".join(
-            #     [f"""<details> <summary>出处 [{i + 1}] {os.path.split(doc.metadata["source"])[-1]}</summary>\n"""
-            #      f"""{doc.page_content}\n"""
-            #      f"""</details>"""
-            #      for i, doc in
-            #      enumerate(resp["source_documents"])])
+            source = "\n\n"
+            source += "".join(
+                [f"""<details> <summary>出处 [{i + 1}] {os.path.split(doc.metadata["source"])[-1]}</summary>\n"""
+                 f"""{doc.page_content}\n"""
+                 f"""</details>"""
+                 for i, doc in
+                 enumerate(resp["source_documents"])])
             history[-1][-1] += source
             yield history, ""
     elif mode == "知识库测试":
@@ -126,47 +130,30 @@ def get_vector_store(vs_id, files, sentence_size, history, one_conent, one_conte
     return vs_path, None, history + [[None, file_status]]
 
 
-knowledge_base_test_mode_info = ("【知识库测试】\n\n"
-                                #  "1. 您已进入知识库测试模式，您输入的任何对话内容都将用于进行知识库查询，"
-                                #  "并仅输出知识库匹配出的内容及相似度分值和及输入的文本源路径，查询的内容并不会进入模型查询。\n\n"
-                                #  "2. 知识相关度 Score 经测试，建议设置为 500 或更低，具体设置情况请结合实际使用调整。"
-                                #  """3. 使用"添加单条数据"添加文本至知识库时，内容如未分段，则内容越多越会稀释各查询内容与之关联的score阈值。\n\n"""
-                                #  "4. 单条内容长度建议设置在100-150左右。\n\n"
-                                #  "5. 本界面用于知识入库及知识匹配相关参数设定，但当前版本中，"
-                                #  "本界面中修改的参数并不会直接修改对话界面中参数，仍需前往`configs/model_config.py`修改后生效。"
-                                #  "相关参数将在后续版本中支持本界面直接修改。"
-                                )
+knowledge_base_test_mode_info = ("【注意】\n\n"
+                                 "1. 您已进入知识库测试模式，您输入的任何对话内容都将用于进行知识库查询，"
+                                 "并仅输出知识库匹配出的内容及相似度分值和及输入的文本源路径，查询的内容并不会进入模型查询。\n\n"
+                                 "2. 知识相关度 Score 经测试，建议设置为 500 或更低，具体设置情况请结合实际使用调整。"
+                                 """3. 使用"添加单条数据"添加文本至知识库时，内容如未分段，则内容越多越会稀释各查询内容与之关联的score阈值。\n\n"""
+                                 "4. 单条内容长度建议设置在100-150左右。\n\n"
+                                 "5. 本界面用于知识入库及知识匹配相关参数设定，但当前版本中，"
+                                 "本界面中修改的参数并不会直接修改对话界面中参数，仍需前往`configs/model_config.py`修改后生效。"
+                                 "相关参数将在后续版本中支持本界面直接修改。")
+
+
+webui_title = """
+人工智能聊天
+"""
+
+init_message = """当前知识库{default_vs}"""
+
 
 
 # 配置项
 class ST_CONFIG:
     default_mode = '知识库问答'
-    defalut_vs = '格力科技'
-    
-webui_title = """
-人工智能聊天
-"""
-# if 'vs_path' not in st.session_state:
-#     st.session_state.vs_path="格力电器"
-    
-default_vs = ST_CONFIG.defalut_vs# st.session_state.vs_path if st.session_state.vs_path else '无'
-init_message = f"""当前知识库: {default_vs}"""
-# main ui
-st.set_page_config(webui_title, layout='wide')
+    defalut_vs = ''
 
-# 问题 不缓存，每次初始化，会导致没有历史
-# 缓存，则发现大家会共用缓存，刷新没有初始化，会报错。
-@st.cache_resource
-def init():
-    return st_chatbox(greetings=[init_message.format(default_vs=ST_CONFIG.defalut_vs),
-                                 '您好',
-                                 ],
-                      user_bg_color="#d0e9ff",
-                      user_icon='static/head2.png',
-                      robot_bg_color="#f3f3f3",
-                      robot_icon="static/head.png"
-                      )
-chat_box = init()
 
 class TempFile:
     '''
@@ -237,7 +224,8 @@ def use_kb_mode(m):
     return m in ['知识库问答', '知识库测试']
 
 
-
+# main ui
+st.set_page_config(webui_title, layout='wide')
 
 
 # sidebar
@@ -265,13 +253,9 @@ with st.sidebar:
             except:
                 pass
             llm_model = st.selectbox('LLM模型', llm_model_dict_list, index)
-            local_path = llm_model_dict[llm_model].get('local_model_path', '')
-            local_model_exist = False
-            if local_path:
-                local_model_exist = os.path.isdir(
-                    local_path
-                )
-            
+
+            local_model_exist = os.path.isdir(
+                llm_model_dict[llm_model].get('local_model_path', ''))
             no_remote_model = st.checkbox(
                 '加载本地模型',
                 not NO_REMOTE_MODEL or local_model_exist,
@@ -324,8 +308,9 @@ with st.sidebar:
             cols = st.columns([12, 10])
             kb_name = cols[0].text_input(
                 '新知识库名称', placeholder='新知识库名称', label_visibility='collapsed')
-            if 'kb_name' not in st.session_state:
-                st.session_state.kb_name = ""
+            # if 'kb_name' not in st.session_state:
+            #     st.session_state.kb_name = ""
+            st.session_state.kb_name = kb_name   
             cols[1].button('新建知识库', on_click=on_new_kb)
             index = 0
             try:
@@ -384,7 +369,17 @@ with st.spinner(f'正在加载模型({llm_model} + {embedding_model})，请耐�
     local_doc_qa.llm.set_history_len(history_len)
     # local_doc_qa.llm.temperature = temperature # 这样设置temperature似乎不起作用
 
-
+@st.cache_resource
+def init():
+    return st_chatbox(greetings=[init_message.format(default_vs=ST_CONFIG.defalut_vs),
+                                 '您好',
+                                 ],
+                      user_bg_color="#d0e9ff",
+                      user_icon='static/head2.png',
+                      robot_bg_color="#f3f3f3",
+                      robot_icon="static/head.png"
+                      )
+chat_box = init()
 # 使用 help(st_chatbox) 查看自定义参数
 
 # input form

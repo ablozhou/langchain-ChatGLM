@@ -254,11 +254,10 @@ class TempFile:
     def __init__(self, path):
         self.name = path
 
-
+#@st.cache_resource
 def init_session():
     if 'history' not in st.session_state:
         st.session_state.history = []
-
 
 st.set_page_config(webui_title, layout='wide')
 init_session()
